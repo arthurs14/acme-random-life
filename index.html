@@ -20,6 +20,10 @@
       color: red;
       margin-top: 10px;
     }
+    #destroy-button {
+      margin-top: 10px;
+      margin-bottom: 10px;
+    }
   </style>
   </head>
   <body>
@@ -60,16 +64,20 @@
           this.destroyNote = this.destroyNote.bind(this);
           this.followCompany = this.followCompany.bind(this);
           this.deleteCompany = this.deleteCompany.bind(this);
+          this.addVacation = this.addVacation.bind(this);
+          this.deleteVacation = this.deleteVacation.bind(this);
         }
 
         async componentDidMount(){
           const user = await fetchUser();
           const companies = (await axios.get(`${API}/companies`)).data;
+          const vacations = (await axios.get(`${API}/users/${user.id}/vacations`)).data;
           const notes = (await axios.get(`${API}/users/${user.id}/notes`)).data;
           const followingCompanies = (await axios.get(`${API}/users/${user.id}/followingCompanies`)).data;
           this.setState({
             user,
             companies,
+            vacations,
             notes,
             followingCompanies
           });
@@ -100,9 +108,8 @@
         async followCompany() {
           // Add functionality to make sure no duplicate companies are added --later
           const rating = Math.floor(Math.random() * 5);
-          console.log(typeof rating);
           const company = this.state.companies[Math.floor(Math.random() * this.state.companies.length)];
-          console.log(company);
+
           if(this.state.followingCompanies.length === 5) {
             const error = 'There can only be 5 companies followed at a time';
             this.setState({ error });
@@ -115,15 +122,36 @@
 
         async deleteCompany(company) {
           const findCompany = this.state.followingCompanies.find(_company => _company.companyId === company.id);
-          console.log(findCompany);
           await axios.delete(`${API}/users/${this.state.user.id}/followingCompanies/${findCompany.id}`);
           this.setState({ followingCompanies: this.state.followingCompanies.filter(_company => _company.id !== findCompany.id) });
         }
 
+        async addVacation() {
+          const schedule = [
+            { startDate: '9/20/2019', endDate: '9/21/2019' },
+            { startDate: '10/30/2019', endDate: '10/31/2019'},
+            { startDate: '11/20/2019', endDate: '11/21/2019'}
+          ];
+          const vacation = schedule[Math.floor(Math.random() * schedule.length)];
+          if(this.state.vacations.length === 3) {
+            const error = 'There can only be 3 vacations';
+            this.setState({ error });
+          } else {
+            const addVacation = (await axios.post(`${API}/users/${this.state.user.id}/vacations`, {startDate: vacation.startDate, endDate: vacation.endDate})).data;
+            const vacations = [...this.state.vacations, addVacation];
+            this.setState({ vacations });
+          }
+        }
+
+        async deleteVacation(vacation) {
+          await axios.delete(`${API}/users/${this.state.user.id}/vacations/${vacation.id}`);
+          this.setState({ vacations: this.state.vacations.filter(_vacation => _vacation.id !== vacation.id)});
+        }
+
         render(){
           const { error, user, companies, vacations, followingCompanies, notes } = this.state;
-          const { createNote, destroyNote, followCompany, deleteCompany } = this;
-
+          const { createNote, destroyNote, followCompany, deleteCompany, addVacation, deleteVacation } = this;
+          console.log(vacations);
           return (
             <div>
               <h1>The Acme Random Life</h1>
@@ -164,6 +192,19 @@
                         </div>
                       );
                     })
+                  }
+                </div>
+              </div>
+              <div>
+                <h2>vacations ({vacations.length})</h2>
+                <button onClick={ addVacation }>Add a Random Vacation</button>
+                <div className='lists'>
+                  {
+                    vacations.map(vacation =>
+                      <div className='listing' key={vacation.id}>
+                        {moment(vacation.startDate).format('MM/DD/YYYY')} - {moment(vacation.endDate).format('MM/DD/YYYY')} <br />
+                        <button id='destroy-button' onClick={() => deleteVacation(vacation)}>Destroy</button>
+                      </div>)
                   }
                 </div>
               </div>
