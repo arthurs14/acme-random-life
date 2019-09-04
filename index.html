@@ -58,6 +58,7 @@
           };
           this.createNote = this.createNote.bind(this);
           this.destroyNote = this.destroyNote.bind(this);
+          this.followCompany = this.followCompany.bind(this);
         }
 
         async componentDidMount(){
@@ -95,9 +96,23 @@
           this.setState({ notes: this.state.notes.filter(_note => _note.id !== note.id)});
         }
 
+        async followCompany() {
+          // Add functionality to make sure no duplicate companies are added --later
+          const rating = Math.floor(Math.random() * 5);
+          const company = this.state.companies[Math.floor(Math.random() * this.state.companies.length)];
+          if(this.state.followingCompanies.length === 5) {
+            const error = 'There can only be 5 companies followed at a time';
+            this.setState({ error });
+          } else {
+            const addCompany = (await axios.post(`${API}/users/${this.state.user.id}/followingCompanies`, {rating, companyId: company.id})).data;
+            const followingCompanies = [...this.state.followingCompanies, addCompany];
+            this.setState({ followingCompanies });
+          }
+        }
+
         render(){
           const { error, user, companies, vacations, followingCompanies, notes } = this.state;
-          const { createNote, destroyNote } = this;
+          const { createNote, destroyNote, followCompany } = this;
 
           const companiesFollowed = followingCompanies.map(company => {
             const findCompany = companies.find(_company => {
@@ -130,7 +145,7 @@
               </div>
               <div>
                 <h2>followingCompanies ({followingCompanies.length})</h2>
-                <button onclick={ followCompany }>
+                <button onClick={ followCompany }>
                   Add a Random followingCompanies
                 </button>
                 <div className='lists'>
